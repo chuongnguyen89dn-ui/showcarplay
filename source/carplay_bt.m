@@ -1346,7 +1346,35 @@ static void handler(uint8_t type, uint16_t ch, uint8_t *pkt, uint16_t sz) {
     }
 }
 
+
+static volatile sig_atomic_t shutdown_requested = 0;
+
+static void showcase_signal_handler(int sig) {
+    (void)sig;
+    shutdown_requested = 1;
+}
+
+static void restore_system_bluetooth(void) {
+    printf("[BT] clean shutdown: returning controller to iOS\n");
+    if (active_cid) {
+        bt_send_cmd(&hci_disconnect, active_cid, 0x13);
+        active_cid = 0;
+        usleep(150000);
+    }
+    bt_send_cmd(&btstack_set_discoverable, 0);
+    bt_send_cmd(&btstack_set_power_mode, 0);
+    usleep(200000);
+    bt_send_cmd(&btstack_set_system_bluetooth_enabled, 1);
+    unlink(BT_READY_PATH);
+    unlink(BT_ID_PATH);
+    int fd = open(BT_DOWN_PATH, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (fd >= 0) close(fd);
+}
+
 int main(int argc, char *argv[]) {
+    signal(SIGTERM, showcase_signal_handler);
+    signal(SIGINT, showcase_signal_handler);
+    signal(SIGHUP, showcase_signal_handler);
     /* Line-buffered stdout/stderr so logs survive SIGTERM (default is
      * fully-buffered when stdout is a file, which loses everything). */
     setvbuf(stdout, NULL, _IOLBF, 0);
@@ -1386,6 +1414,7 @@ int main(int argc, char *argv[]) {
         int power_rc = bt_send_cmd(&btstack_set_power_mode,1);
         printf("[BT] btstack_set_power_mode rc=%d\n", power_rc);
         run_loop_execute();
+        restore_system_bluetooth();
     }
     return 0;
 }
