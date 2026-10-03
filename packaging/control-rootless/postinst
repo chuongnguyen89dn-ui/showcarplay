@@ -1,0 +1,116 @@
+#!/bin/sh
+set -e
+
+APP="/var/jb/Applications/Showcase.app"
+BT_HELPER="$APP/CarDisplaySim"
+SVC_HELPER="$APP/CarPlay Simulator"
+BTDAEMON="/var/jb/usr/bin/BTdaemon"
+BTLIB="/var/jb/usr/lib/libBTstack.dylib"
+BTSTACK_PLIST="/var/jb/Library/LaunchDaemons/ch.ringwald.BTstack.plist"
+ENT_DIR="/var/jb/usr/share/showcase"
+
+launchctl_path() {
+    for tool in /var/jb/usr/bin/launchctl /var/jb/bin/launchctl /bin/launchctl /usr/bin/launchctl; do
+        if [ -x "$tool" ]; then
+            echo "$tool"
+            return 0
+        fi
+    done
+    return 1
+}
+
+run_uicache() {
+    for tool in /var/jb/usr/bin/uicache /usr/bin/uicache; do
+        if [ -x "$tool" ]; then
+            "$tool" "$@" 2>/dev/null || true
+            return
+        fi
+    done
+}
+
+ldid_path() {
+    for tool in /var/jb/usr/bin/ldid /var/jb/bin/ldid /usr/bin/ldid; do
+        if [ -x "$tool" ]; then
+            echo "$tool"
+            return 0
+        fi
+    done
+    return 1
+}
+
+sign_or_fail() {
+    ent="$1"
+    file="$2"
+    if [ ! -f "$file" ]; then
+        echo "Showcase: missing file for signing: $file" >&2
+        exit 1
+    fi
+    if [ -n "$ent" ] && [ ! -f "$ent" ]; then
+        echo "Showcase: missing entitlement file: $ent" >&2
+        exit 1
+    fi
+    if [ -n "$ent" ]; then
+        "$LDID" -S"$ent" "$file"
+    else
+        "$LDID" -S "$file"
+    fi
+}
+
+if ! LDID="$(ldid_path)"; then
+    echo "Showcase: ldid is required for rootless install-time signing" >&2
+    exit 1
+fi
+
+if [ -d "$APP" ]; then
+    rm -f "$APP/carplay_bt.real" "$APP/carplay_services.real"
+    chown -R root:wheel "$APP" 2>/dev/null || true
+
+    chmod 0755 "$APP" 2>/dev/null || true
+    chmod 0644 "$APP"/Info.plist "$APP"/Icon*.png 2>/dev/null || true
+
+    chmod 4755 "$APP"/Showcase 2>/dev/null || true
+    chmod 4755 "$BT_HELPER" 2>/dev/null || true
+    chmod 4755 "$SVC_HELPER" 2>/dev/null || true
+fi
+
+if [ -f "$BTDAEMON" ]; then
+    chown root:wheel "$BTDAEMON" 2>/dev/null || true
+    chmod 0755 "$BTDAEMON" 2>/dev/null || true
+fi
+
+if [ -f "$BTLIB" ]; then
+    chown root:wheel "$BTLIB" 2>/dev/null || true
+    chmod 0755 "$BTLIB" 2>/dev/null || true
+fi
+
+if [ -d "$APP" ]; then
+    sign_or_fail "$ENT_DIR/ent_app.xml" "$APP/Showcase"
+    sign_or_fail "$ENT_DIR/ent_bt.xml" "$BT_HELPER"
+    sign_or_fail "$ENT_DIR/ent_svc.xml" "$SVC_HELPER"
+    chmod 4755 "$APP"/Showcase 2>/dev/null || true
+    chmod 4755 "$BT_HELPER" 2>/dev/null || true
+    chmod 4755 "$SVC_HELPER" 2>/dev/null || true
+fi
+
+if [ -f "$BTDAEMON" ]; then
+    sign_or_fail "$ENT_DIR/ent_btdaemon.xml" "$BTDAEMON"
+    chmod 0755 "$BTDAEMON" 2>/dev/null || true
+fi
+
+if [ -f "$BTLIB" ]; then
+    sign_or_fail "" "$BTLIB"
+    chmod 0755 "$BTLIB" 2>/dev/null || true
+fi
+
+if [ -f "$BTSTACK_PLIST" ]; then
+    chown root:wheel "$BTSTACK_PLIST" 2>/dev/null || true
+    chmod 0644 "$BTSTACK_PLIST" 2>/dev/null || true
+    if LAUNCHCTL="$(launchctl_path)"; then
+        "$LAUNCHCTL" unload "$BTSTACK_PLIST" 2>/dev/null || true
+        "$LAUNCHCTL" load "$BTSTACK_PLIST" 2>/dev/null || true
+    fi
+fi
+
+run_uicache --path "$APP"
+
+exit 0

@@ -1,0 +1,9 @@
+#!/bin/sh
+set -e
+
+if [ -x /usr/bin/uicache ]; then
+    /usr/bin/uicache --unregister /Applications/Showcase.app 2>/dev/null || true
+    /usr/bin/uicache --all 2>/dev/null || true
+fi
+
+exit 0

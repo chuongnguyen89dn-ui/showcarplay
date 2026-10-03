@@ -1,0 +1,14 @@
+#!/bin/sh
+set -e
+
+APP="/var/jb/Applications/Showcase.app"
+
+for tool in /var/jb/usr/bin/uicache /usr/bin/uicache; do
+    if [ -x "$tool" ]; then
+        "$tool" --unregister "$APP" 2>/dev/null || true
+        "$tool" --all 2>/dev/null || true
+        break
+    fi
+done
+
+exit 0

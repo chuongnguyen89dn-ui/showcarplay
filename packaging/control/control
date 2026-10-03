@@ -1,0 +1,20 @@
+Package: com.rostane.showcase
+Name: Showcase (Rootful)
+Version: 1.0~beta3
+Architecture: iphoneos-arm
+Section: Utilities
+Maintainer: Amine Rostane <amine.rostane@outlook.com>
+Author: Amine Rostane <amine.rostane@outlook.com>
+Depends: firmware (>= 12.0), uikittools
+Conflicts: ch.ringwald.btstack
+Replaces: ch.ringwald.btstack (<= 1.1-1)
+Homepage: https://github.com/amineross/showcase
+Icon: https://aminerostane.com/repo/icons/showcase.png
+Depiction: https://aminerostane.com/repo/depictions/cydia.html
+SileoDepiction: https://aminerostane.com/repo/depictions/sileo.json
+Description: Wireless CarPlay receiver for rootful jailbreaks.
+ Showcase turns a jailbroken cellular iPhone or iPad into a wireless CarPlay
+ receiver. This package uses the rootful layout and supports iOS 12 or newer.
+ .
+ Beta 3 adds receiver audio, hardware-aware HD video, responsive touch,
+ lifecycle recovery, a Showcase vehicle app, and BTstack compatibility checks.

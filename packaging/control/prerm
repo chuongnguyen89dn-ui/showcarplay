@@ -1,0 +1,24 @@
+#!/bin/sh
+set -e
+
+BTSTACK_PLIST="/Library/LaunchDaemons/ch.ringwald.BTstack.plist"
+
+case "$1" in
+    remove|deconfigure|upgrade)
+        killall carplay_services 2>/dev/null || true
+        killall carplay_bt 2>/dev/null || true
+        killall Showcase 2>/dev/null || true
+        if [ -f "$BTSTACK_PLIST" ]; then
+            /bin/launchctl unload "$BTSTACK_PLIST" 2>/dev/null || true
+        fi
+        killall BTdaemon 2>/dev/null || true
+
+        if [ -f /System/Library/LaunchDaemons/com.apple.bluetoothd.plist ]; then
+            /bin/launchctl load /System/Library/LaunchDaemons/com.apple.bluetoothd.plist 2>/dev/null || \
+            /usr/bin/launchctl load /System/Library/LaunchDaemons/com.apple.bluetoothd.plist 2>/dev/null || \
+            true
+        fi
+        ;;
+esac
+
+exit 0

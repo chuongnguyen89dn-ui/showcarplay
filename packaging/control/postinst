@@ -1,0 +1,41 @@
+#!/bin/sh
+set -e
+
+APP="/Applications/Showcase.app"
+BTDAEMON="/usr/bin/BTdaemon"
+BTLIB="/usr/lib/libBTstack.dylib"
+BTSTACK_PLIST="/Library/LaunchDaemons/ch.ringwald.BTstack.plist"
+
+if [ -d "$APP" ]; then
+    chown -R root:wheel "$APP" 2>/dev/null || true
+
+    chmod 0755 "$APP" 2>/dev/null || true
+    chmod 0644 "$APP"/Info.plist "$APP"/Icon*.png 2>/dev/null || true
+
+    chmod 4755 "$APP"/Showcase 2>/dev/null || true
+    chmod 4755 "$APP"/carplay_bt 2>/dev/null || true
+    chmod 4755 "$APP"/carplay_services 2>/dev/null || true
+fi
+
+if [ -f "$BTDAEMON" ]; then
+    chown root:wheel "$BTDAEMON" 2>/dev/null || true
+    chmod 0755 "$BTDAEMON" 2>/dev/null || true
+fi
+
+if [ -f "$BTLIB" ]; then
+    chown root:wheel "$BTLIB" 2>/dev/null || true
+    chmod 0755 "$BTLIB" 2>/dev/null || true
+fi
+
+if [ -f "$BTSTACK_PLIST" ]; then
+    chown root:wheel "$BTSTACK_PLIST" 2>/dev/null || true
+    chmod 0644 "$BTSTACK_PLIST" 2>/dev/null || true
+    /bin/launchctl unload "$BTSTACK_PLIST" 2>/dev/null || true
+    /bin/launchctl load "$BTSTACK_PLIST" 2>/dev/null || true
+fi
+
+if [ -x /usr/bin/uicache ]; then
+    /usr/bin/uicache --path "$APP" 2>/dev/null || true
+fi
+
+exit 0
