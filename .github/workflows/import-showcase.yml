@@ -1,0 +1,32 @@
+name: Import Showcase upstream
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/import-showcase.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout destination
+        uses: actions/checkout@v4
+      - name: Import upstream source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth=1 https://github.com/amineross/showcase.git /tmp/showcase-upstream
+          rsync -a --exclude='.git' --exclude='.github' /tmp/showcase-upstream/ ./
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'Already up to date'
+            exit 0
+          fi
+          git commit -m 'chore: import amineross/showcase upstream'
+          git push origin HEAD:main
